@@ -1,6 +1,7 @@
 # USER SPECIFIC/IDE FILES
 .idea/
 venv/
+*.zip
 
 # GENERAL PYTHON FILES
 __pycache__/
