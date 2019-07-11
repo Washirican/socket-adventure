@@ -1,4 +1,7 @@
 import socket
+from faker import Faker
+
+fake = Faker()
 
 
 class Server(object):
@@ -81,9 +84,13 @@ class Server(object):
         :return: str
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        # TODO: Use faker for room descriptions?
+        return [
+            'You are in the room with the white wallpaper.',
+            'You are in the room with the green wallpaper.',
+            'You are in the room with the brown wallpaper.',
+            'You are in the room with the mauve wallpaper.',
+            ][room_number]
 
     def greet(self):
         """
@@ -110,9 +117,11 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
+        received = b''
+        while b'\n' not in received:
+            received += self.client_connection.recv(16)
 
-        pass
+        self.input_buffer = received.decode().strip()
 
     def move(self, argument):
         """
@@ -135,9 +144,51 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
+        # print('Current room: {}'.format(self.room))
+        # print('Argument room: {}'.format(argument))
 
-        pass
+        if self.room == 0:
+            if argument == 'north':
+                self.room = 3
+                self.output_buffer = self.room_description(self.room)
+
+            elif argument == 'west':
+                self.room = 1
+                self.output_buffer = self.room_description(self.room)
+
+            elif argument == 'east':
+                self.room = 2
+                self.output_buffer = self.room_description(self.room)
+
+            else:
+                self.output_buffer = 'It is dark in here. ' \
+                                     'You just slammed into a wall! '
+        elif self.room == 1:
+            if argument == 'east':
+                self.room = 0
+                self.output_buffer = self.room_description(self.room)
+
+            else:
+                self.output_buffer = 'It is dark in here. ' \
+                                     'You just slammed into a wall! '
+
+        elif self.room == 2:
+            if argument == 'west':
+                self.room = 0
+                self.output_buffer = self.room_description(self.room)
+
+            else:
+                self.output_buffer = 'It is dark in here. ' \
+                                     'You just slammed into a wall! '
+
+        elif self.room == 3:
+            if argument == 'south':
+                self.room = 0
+                self.output_buffer = self.room_description(self.room)
+
+            else:
+                self.output_buffer = 'It is dark in here. ' \
+                                     'You just slammed into a wall! '
 
     def say(self, argument):
         """
@@ -153,25 +204,30 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
+        self.output_buffer = 'You say, "{}"'.format(argument)
 
-        pass
+    def do(self, argument):
+        """
+        Lets the client do adn action by putting their action into the output buffer.
+
+        :param argument: str
+        :return: None
+        """
+
+        self.output_buffer = 'You are {}.'.format(argument)
 
     def quit(self, argument):
         """
         Quits the client from the server.
-
         Turns `self.done` to True and puts "Goodbye!" onto the output buffer.
-
         Ignore the argument.
 
         :param argument: str
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        self.done = True
+        self.output_buffer = 'Goodbye!'
 
     def route(self):
         """
@@ -184,10 +240,20 @@ class Server(object):
 
         :return: None
         """
+        response = self.input_buffer.split(' ')
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        if response[0] == 'quit':
+            self.quit(None)
+        elif response[0] == 'move':
+            self.move(response[1])
+        elif response[0] == 'say':
+            self.say(' '.join(response[1:]).rstrip())
+        elif response[0] == 'do':
+            verb = response[1] + 'ing'
+            self.do(verb + ' ' + ' '.join(response[2:]).rstrip())
+        else:
+            self.output_buffer = 'These rooms can be quite noisy. ' \
+                                 'I could not understand what you said!'
 
     def push_output(self):
         """
@@ -199,9 +265,8 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        self.client_connection.sendall(b'OK! ' + self.output_buffer.encode() +
+                                       b'\n')
 
     def serve(self):
         self.connect()
